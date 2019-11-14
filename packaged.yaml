@@ -1,0 +1,90 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: 'sam-app
+
+  Sample SAM Template for sam-app
+
+  '
+Globals:
+  Function:
+    Timeout: 3
+Resources:
+
+  DynamoDBTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: symbol
+          AttributeType: S
+        - AttributeName: eTime
+          AttributeType: N
+      KeySchema:
+        - AttributeName: symbol
+          KeyType: HASH
+        - AttributeName: eTime
+          KeyType: RANGE
+      ProvisionedThroughput:
+         ReadCapacityUnits: 1
+         WriteCapacityUnits: 1
+
+
+  HelloWorldFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Environment:
+        Variables:
+          API_KEY: my-api
+      CodeUri:  <s3_uri>
+      Handler: app.lambda_handler
+      Timeout: 30
+      Runtime: python3.7
+      Policies:
+        - AWSLambdaExecute # Managed Policy
+        - Version: '2012-10-17' # Policy Document
+          Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:*
+              Resource: '*'
+
+  AvgSPFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Environment:
+        Variables:
+          API_KEY: my-api
+      CodeUri:  s3://gahana-sam/129e8d4090e70fb349ec4b4227f19d52
+      Handler: stockPriceFetcher.lambda_handler
+      Timeout: 30
+      Runtime: python3.7
+      Policies:
+        - AWSLambdaExecute # Managed Policy
+        - Version: '2012-10-17' # Policy Document
+          Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:*
+              Resource: '*'
+      Events:
+        HelloWorld:
+          Type: Api
+          Properties:
+            Path: /AvgStockPrice
+            Method: get
+Outputs:
+  HelloWorldApi:
+    Description: API Gateway endpoint URL for Prod stage for Hello World function
+    Value:
+      Fn::Sub: https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/
+  HelloWorldFunction:
+    Description: Hello World Lambda Function ARN
+    Value:
+      Fn::GetAtt:
+      - HelloWorldFunction
+      - Arn
+  HelloWorldFunctionIamRole:
+    Description: Implicit IAM Role created for Hello World function
+    Value:
+      Fn::GetAtt:
+      - HelloWorldFunctionRole
+      - Arn
